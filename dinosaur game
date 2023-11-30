@@ -1,0 +1,145 @@
+#%%
+import pygame
+import random
+import sys
+
+# Initialize Pygame
+pygame.init()
+
+# Constants
+WIDTH, HEIGHT = 800, 400
+GROUND_HEIGHT = 350
+FPS = 60
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+
+# Create the game window
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Dinosaur Game")
+
+# Load images
+dino_img = pygame.image.load("dino.png")
+cactus_img = pygame.image.load("cactus.png")
+background_img = pygame.image.load("background.jpg")
+
+# Scale images
+dino_img = pygame.transform.scale(dino_img, (50, 50))
+cactus_img = pygame.transform.scale(cactus_img, (30, 50))
+background_img = pygame.transform.scale(background_img, (WIDTH, HEIGHT))
+
+# Clock to control the frame rate
+clock = pygame.time.Clock()
+
+# Dinosaur parameters
+dino_x = 50
+dino_y = GROUND_HEIGHT - dino_img.get_height()
+dino_jump = False
+dino_jump_count = 10
+
+# Cactus parameters
+cactus_list = []
+
+# Score
+score = 0
+font = pygame.font.Font(None, 36)
+
+def draw_score():
+    score_text = font.render("Score: " + str(score), True, BLACK)
+    screen.blit(score_text, (10, 10))
+
+def draw_background():
+    screen.blit(background_img, (0, 0))
+
+def draw_dinosaur():
+    screen.blit(dino_img, (dino_x, dino_y))
+
+def draw_cacti():
+    for cactus in cactus_list:
+        screen.blit(cactus_img, cactus)
+
+def game_over():
+    game_over_text = font.render("Game Over. Press Q to Quit.", True, BLACK)
+    screen.blit(game_over_text, (WIDTH // 2 - 200, HEIGHT // 2 - 50))
+    pygame.display.flip()
+
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_q:
+                    pygame.quit()
+                    sys.exit()
+
+        pygame.time.Clock().tick(FPS)
+
+def main():
+    global dino_x, dino_y, dino_jump, dino_jump_count, cactus_list, score
+
+    running = True
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE and not dino_jump:
+                    dino_jump = True
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_q:
+                    running = False
+
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_SPACE] and not dino_jump:
+            dino_jump = True
+
+        # Dinosaur jumping
+        if dino_jump:
+            if dino_jump_count >= -10:
+                neg = 1
+                if dino_jump_count < 0:
+                    neg = -1
+                dino_y -= (dino_jump_count ** 2) * 0.5 * neg
+                dino_jump_count -= 1
+            else:
+                dino_jump = False
+                dino_jump_count = 10
+
+        # Move cacti
+        for cactus in cactus_list:
+            cactus[0] -= 5
+
+        # Generate new cactus
+        if random.randint(0, 500) < 5:
+            cactus_list.append([WIDTH, GROUND_HEIGHT - cactus_img.get_height()])
+
+        # Remove off-screen cacti
+        cactus_list = [cactus for cactus in cactus_list if cactus[0] > 0]
+
+        # Check for collisions
+        for cactus in cactus_list:
+            if (
+                dino_x < cactus[0] + cactus_img.get_width()
+                and dino_x + dino_img.get_width() > cactus[0]
+                and dino_y < cactus[1] + cactus_img.get_height()
+                and dino_y + dino_img.get_height() > cactus[1]
+            ):
+                game_over()
+
+        # Draw everything
+        draw_background()
+        draw_dinosaur()
+        draw_cacti()
+        draw_score()
+
+        # Update the display
+        pygame.display.flip()
+
+        # Cap the frame rate
+        clock.tick(FPS)
+
+if __name__ == "__main__":
+    main()
+
+
+# %%
